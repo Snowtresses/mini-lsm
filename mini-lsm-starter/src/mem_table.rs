@@ -20,7 +20,7 @@ use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
 
-use anyhow::Result;
+use anyhow::{Ok, Result};
 use bytes::Bytes;
 use crossbeam_skiplist::SkipMap;
 use ouroboros::self_referencing;
@@ -53,7 +53,12 @@ pub(crate) fn map_bound(bound: Bound<&[u8]>) -> Bound<Bytes> {
 impl MemTable {
     /// Week 1 Day 1: create the plain in-memory memtable.
     pub fn create(_id: usize) -> Self {
-        unimplemented!()
+        Self {
+            map: Arc::new(SkipMap::new()),
+            wal: None,
+            id: _id,
+            approximate_size: Arc::new(AtomicUsize::new(0)),
+        }
     }
 
     /// Week 2 Day 6: create a memtable backed by a write-ahead log.
@@ -87,7 +92,11 @@ impl MemTable {
 
     /// Week 1 Day 1: get a value by key.
     pub fn get(&self, _key: &[u8]) -> Option<Bytes> {
-        unimplemented!()
+        // 1. 使用 self.map.get(_key)
+            // 2. crossbeam-skiplist 的 get 返回的是一个 Entry 对象
+            // 3. 你需要将其中的 Value 转换为 Bytes
+            // 注意：这里需要处理 Byte 的转换，通常是 .map(|entry| entry.value().clone())
+        self.map.get(_key).map(|entry| entry.value().clone())
     }
 
     /// Put a key-value pair into the memtable.
@@ -96,7 +105,11 @@ impl MemTable {
     /// Week 2 Day 6: also append the data to the write-ahead log.
     /// Week 3 Day 5: route the write through the batch WAL implementation.
     pub fn put(&self, _key: &[u8], _value: &[u8]) -> Result<()> {
-        unimplemented!()
+        let key  = Bytes::copy_from_slice(_key);
+        let value = Bytes::copy_from_slice(_value);
+
+        self.map.insert(key ,value);
+        Ok(())
     }
 
     /// Week 3 Day 5: put a batch of key-value pairs.
